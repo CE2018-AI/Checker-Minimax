@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
+using System.IO;
 
 public class CheckersBoard : MonoBehaviour {
 
@@ -9,7 +11,7 @@ public class CheckersBoard : MonoBehaviour {
     public GameObject blackPiecePrefab;
 
     private Vector3 boardOffset = new Vector3(-4.0f,0,-4.0f);
-    private Vector3 pieceOffset = new Vector3(0.5f, 0, 0);
+    private Vector3 pieceOffset = new Vector3(0.5f, -0.7f, 0);
 
     private Vector2 mouseOver;
     private Vector2 startDarg,endDrag;
@@ -17,10 +19,18 @@ public class CheckersBoard : MonoBehaviour {
     private bool isWhite;
     private bool isWhiteTurn;
     private bool haskilled;
+    public int secondTomove = 2;
 
     private Piece selectedPiece;
     private List<Piece> forcePiece;
     private bool jumpAgain;
+
+    public List<Vector2> pieceToMove;
+    public List<Vector2> placeToMove;
+    int count=0,maxCount=0;
+
+    public List<TextAsset> data;
+
     // Use this for initialization
     void Start() {
         GenerateBoard();
@@ -28,11 +38,13 @@ public class CheckersBoard : MonoBehaviour {
         isWhite = true;
         forcePiece = new List<Piece>();
         jumpAgain = false;
+        ReadString();
+        StartCoroutine(ForceMoveAnimation((int)pieceToMove[count].x, (int)pieceToMove[count].y, (int)placeToMove[count].x, (int)placeToMove[count++].y));
     }
 
     // Update is called once per frame
     void Update() {
-        updateMouseOver();
+        /*updateMouseOver();
         //Debug.Log(mouseOver);
         if ((isWhite)?isWhiteTurn:!isWhiteTurn)
         {
@@ -47,7 +59,7 @@ public class CheckersBoard : MonoBehaviour {
 
             if (Input.GetMouseButtonUp(0))
                 TryMove((int)startDarg.x, (int)startDarg.y, x, y);
-        }
+        }*/
     }
     private void TryMove(int x1, int y1,int x2,int y2)
     {
@@ -256,7 +268,7 @@ public class CheckersBoard : MonoBehaviour {
     }
     private void GeneratePiece(int x, int y)
     {
-        bool isPieceWhite = (y > 3) ? false : true;
+        bool isPieceWhite = (y < 3) ? false : true;
         GameObject go = Instantiate((isPieceWhite)?whitePiecePrefab:blackPiecePrefab) as GameObject;
         go.transform.SetParent(transform);
         Piece p = go.GetComponent<Piece>();
@@ -349,4 +361,110 @@ public class CheckersBoard : MonoBehaviour {
     {
         p.transform.position = (Vector3.right * x)+(Vector3.forward*y)+boardOffset+ pieceOffset;
     }
+    IEnumerator ForceMoveAnimation(int x0, int y0, int x, int y)
+    {
+        Piece p = pieces[x0, y0];
+        pieces[x, y] = p;
+        pieces[x0, y0] = null;
+        checkRemovePiece(x0,y0,x,y);
+        p.transform.position = (Vector3.right * x) + (Vector3.forward * y) + boardOffset + pieceOffset;
+        if(!p.isKing&&p.isWhite&&y==0)
+        {
+            p.isKing = true;
+            p.transform.Rotate(Vector3.right * 180);
+        }
+        else if (!p.isKing && !p.isWhite && y == 7)
+        {
+            p.isKing = true;
+            p.transform.Rotate(Vector3.right * 180);
+        }
+        yield return new WaitForSeconds(secondTomove);
+        if(count!=maxCount)
+        StartCoroutine(ForceMoveAnimation((int)pieceToMove[count].x, (int)pieceToMove[count].y, (int)placeToMove[count].x, (int)placeToMove[count++].y));
+    }
+    public void checkRemovePiece(int x0, int y0, int x, int y)
+    {
+       if(Mathf.Abs(y - y0)==2) //jump over
+       {
+            if(y - y0 == 2)
+            {
+                if(x0<x)
+                    removePiece(x0 + 1, y0 + 1);
+                else
+                    removePiece(x0 - 1, y0 + 1);
+            }
+            else
+            {
+                if (x0 < x)
+                    removePiece(x0 + 1, y0 - 1);
+                else
+                    removePiece(x0 - 1, y0 - 1);
+            }
+       }
+    }
+    public void removePiece(int x,int y)
+    {
+        Destroy(pieces[x, y].gameObject);
+        Debug.Log(pieces[x, y]);
+    }
+
+   public void ReadString()
+    {
+        string data1, data2;
+        data1 = data[0].ToString();
+        data2 = data[1].ToString();
+        Debug.Log("[PieceToMove]\n" + data1);
+        Debug.Log("[PlaceToMove]\n" + data2);
+
+        maxCount = int.Parse(data[2].ToString());
+        Debug.Log("Count: " + maxCount);
+
+        Vector2 pieceXY = new Vector2(0,0);
+        int j = 0;
+        for(int i=0;i< data1.Length ; i++)
+        {
+            if(!data1[i].Equals(' ')&&!data1[i].Equals('\n'))
+            {
+                if (j % 2 == 0)
+                {
+                    Debug.Log("X:" + (data1[i].ToString()));
+                    j++;
+                    pieceXY.x =  float.Parse(data1[i].ToString());
+                }
+                else
+                {
+                    j++;
+                    Debug.Log("Y:" + (data1[i].ToString()));
+                    pieceXY.y = 7-float.Parse(data1[i].ToString());
+                    pieceToMove.Add(pieceXY);
+                    i++;
+                }
+            }
+        }
+
+        j = 0;
+        for (int i = 0; i < data2.Length; i++)
+        {
+            if (!data2[i].Equals(' ') && !data2[i].Equals('\n'))
+            {
+                if (j % 2 == 0)
+                {
+                    Debug.Log("X2:" + (data2[i].ToString()) );
+                    j++;
+                    pieceXY.x = float.Parse(data2[i].ToString());
+                }
+                else
+                {
+                    j++;
+                    Debug.Log("Y2:" + (data2[i].ToString()));
+                    pieceXY.y = 7-float.Parse(data2[i].ToString());
+                    placeToMove.Add(pieceXY);
+                    i++;
+                }
+            }
+        }
+
+
+    }
+
 }

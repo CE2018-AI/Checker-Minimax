@@ -4,8 +4,8 @@ using System.Text;
 using UnityEngine;
 
 public class Board : MonoBehaviour {
-    
-    private Type[,] board;
+
+    public Type[,] board;
     public  int SIZE = 8;
 
     private int numWhiteNormalPieces;
@@ -64,7 +64,8 @@ public class Board : MonoBehaviour {
         numBlackKingPieces = 0;
         numWhiteKingPieces = 0;
         board = new Type[SIZE,SIZE];
-        for (int i = 0; i < board.Length; i++)
+                        // Borad.Length
+        for (int i = 0; i < SIZE; i++)
         {
             int start = 0;
             if (i % 2 == 0)
@@ -75,8 +76,8 @@ public class Board : MonoBehaviour {
                 pieceType = Type.WHITE;
             else if (i >= 5)
                 pieceType = Type.BLACK;
-
-            for (int j = start; j < board.Length; j += 2)
+                                    // Borad.Length
+            for (int j = start; j < SIZE; j += 2)
             {
                 board[i,j] = pieceType;
             }
@@ -98,7 +99,7 @@ public class Board : MonoBehaviour {
 
     private void populateEmptyOnBoard()
     {
-        for (int i = 0; i < board.Length; i++)
+        for (int i = 0; i < SIZE; i++)
         {
             for (int j = 0; j < SIZE; j++) //board[i].length
             {
@@ -153,7 +154,7 @@ public class Board : MonoBehaviour {
     // returns true if move successful
     public Decision makeMove(Move move, Player.Side side)
     {
-        if (move == null)
+        if (move.getEnd() == null && move.getStart() == null)
         {
             return Decision.GAME_ENDED;
         }
@@ -382,14 +383,16 @@ public class Board : MonoBehaviour {
     {
         StringBuilder b = new StringBuilder();
         b.Append("  ");
-        for (int i = 0; i < board.Length; i++)
+
+        for (int i = 0; i < SIZE; i++)
         {
             b.Append(i + " ");
         }
         b.Append("\n");
-        for (int i = 0; i < board.Length; i++)
+                            // Borad.Length
+        for (int i = 0; i < SIZE; i++)
         {
-            for (int j = -1; j < SIZE ; j++) //board[i].Length
+            for (int j = -1; j < SIZE ; j++) //Borad.Length
             {
                 string a = "";
                 if (j == -1)

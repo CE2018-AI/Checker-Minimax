@@ -11,10 +11,11 @@ public class MinimaxAI : Player {
     private long totalTimeElapsed;
     private double numMovesCalled;
     private int pruned = 0;
+    private bool checkVec = false;
     public MinimaxAI(string name, Side s)
     : base(name, s)   //----------------------------------****** 
     {
-       
+
     }
     public MinimaxAI(Side s, int depth)
     :base("MinimaxAI", s) //---------------------------------******
@@ -32,15 +33,20 @@ public class MinimaxAI : Player {
     }
     public Board.Decision makeMove(Board board)
     {
+        
         numMovesCalled++;
         long startTime = nanoTime();
         Move m = minimaxStart(board, depth, getSide(), true);
         totalTimeElapsed += nanoTime() - startTime;
         //System.out.println("m is: " + m);
         //Move move = board.getAllValidMoves(getSide()).get(m);
+        Main.println("::::::::" + m.getEnd() + "  " + m.getStart());
         Board.Decision decision = board.makeMove(m, getSide());
         if (decision == Board.Decision.ADDITIONAL_MOVE)
+        {
             skippingPoint = m.getEnd();
+            checkVec = true;
+        }
 
         //System.out.println("Pruned tree: " + pruned + " times");
         return decision;
@@ -55,12 +61,12 @@ public class MinimaxAI : Player {
         double beta = double.PositiveInfinity;
 
         List<Move> possibleMoves;
-        if (skippingPoint == null) //--------------------------***
+        if (!checkVec) //--------------------------***
             possibleMoves = board.getAllValidMoves(side);
         else
         {
             possibleMoves = board.getValidSkipMoves((int)skippingPoint.x, (int)skippingPoint.y, side);
-            skippingPoint = Vector2.zero;//-------------------------null;
+            checkVec = false;//-------------------------null;
         }
         //System.out.println("side: " + side + " " + possibleMoves.size());
 
@@ -97,7 +103,8 @@ public class MinimaxAI : Player {
             }
         }
         //Main.println("Filtered/max heuristics: " + heuristics);
-        return possibleMoves.get(rand.nextInt(possibleMoves.Count));
+        // return possibleMoves.get(rand.nextInt(possibleMoves.Count));
+        return possibleMoves[0];//rand.Next(possibleMoves.Count)
     }
 
     private double minimax(Board board, int depth, Side side, bool maximizingPlayer, double alpha, double beta)
